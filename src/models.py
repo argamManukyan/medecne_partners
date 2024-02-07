@@ -1,4 +1,4 @@
-from sqlalchemy import String, URL, UniqueConstraint, Integer, ForeignKey
+from sqlalchemy import String, UniqueConstraint, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.core.db_initialization import AbstractModel
 
@@ -13,19 +13,16 @@ class Employee(AbstractModel):
     full_name: Mapped[str]
     email: Mapped[str]
     user_id: Mapped[int]
-    partner: Mapped["Partner"] = relationship(
-        "Partner", back_populates="employees", cascade="all, delete-orphan"
-    )
+    partner: Mapped["Partner"] = relationship("Partner", back_populates="employees")
     partner_id: Mapped[int] = mapped_column(Integer, ForeignKey("partner.id"))
 
 
 class Partner(AbstractModel):
     __tablename__ = "partner"
-    name: Mapped[str] = mapped_column(String(50))
+    name: Mapped[str] = mapped_column(String(50), unique=True)
     email: Mapped[str] = mapped_column(String(50))
-    phone_number: Mapped[str] = mapped_column(String(50))
-    logo: Mapped[URL] = mapped_column(String)
-    employee: Mapped[list[Employee]] = relationship(
-        "Employee",
-        back_populates="user",
+    phone_number: Mapped[str] = mapped_column(String(50), nullable=True)
+    logo: Mapped[str] = mapped_column(String, nullable=True)
+    employees: Mapped[list[Employee]] = relationship(
+        "Employee", back_populates="partner", cascade="all, delete-orphan"
     )
