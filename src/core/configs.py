@@ -12,7 +12,7 @@ class DBSettings(BaseSettings):
 
     DB_USER: str = os.environ.get("DB_USER", "")
     DB_PASSWORD: str = os.environ.get("DB_PASSWORD", "")
-    DB_PORT: str = os.environ.get("DB_PORT", "")
+    DB_PORT: int = int(os.environ.get("DB_PORT", "5432"))
     DB_HOST: str = os.environ.get("DB_HOST", "")
     DB_NAME: str = os.environ.get("DB_NAME", "")
 
@@ -24,7 +24,10 @@ class DBSettings(BaseSettings):
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
 
-    SECRET_KEY: str = os.environ.get("SECRET_KEY", "")
+    SECRET_KEY: str = os.environ.get("APP_SECRET_KEY", "")
+    PORT: int = int(os.environ.get("APP_PORT", "8002"))
+    RELOAD: bool = bool(os.environ.get("APP_RELOAD", "!"))
+    HOST: str = os.environ.get("APP_HOST", "localhost")
 
 
 class Settings(BaseSettings):
