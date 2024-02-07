@@ -20,7 +20,7 @@ class Employee(AbstractModel):
 class Partner(AbstractModel):
     __tablename__ = "partner"
     name: Mapped[str] = mapped_column(String(50), unique=True)
-    email: Mapped[str] = mapped_column(String(50))
+    email: Mapped[str] = mapped_column(String(50), unique=True)
     phone_number: Mapped[str] = mapped_column(String(50), nullable=True)
     logo: Mapped[str] = mapped_column(String, nullable=True)
     employees: Mapped[list[Employee]] = relationship(
