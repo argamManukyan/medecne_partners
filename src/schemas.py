@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr, Field
+from typing import Generic, Sequence
+from src.utils import Model
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
 class BaseSchema(BaseModel):
@@ -24,4 +26,16 @@ class EmployeeResponseSchema(BaseSchema, EmployeeCreateSchema):
 
 
 class PartnerResponseSchema(BaseSchema, PartnerCreateSchema):
+    model_config = ConfigDict(from_attributes=True)
     employee: list[EmployeeResponseSchema] = Field(default_factory=list)
+
+
+class PaginationSchema(BaseSchema):
+    offset: int = Field(gte=0)
+    limit: int = Field(gte=4)
+
+
+class PaginatedResponseSchema(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    total: int = 0
+    data: Sequence[Model] = Field(default_factory=list)

@@ -1,8 +1,10 @@
 import datetime
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import MetaData, text, DateTime
 from sqlalchemy.orm import declarative_base, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from src.exceptions import GenericException
 from src.core.configs import settings
 
 
@@ -15,7 +17,11 @@ async_session = async_sessionmaker(
 
 async def get_session():
     async with async_session() as session:
-        yield session
+        try:
+            yield session
+        except IntegrityError as e:
+            await session.rollback()
+            raise GenericException(detail=f"{e}", status_code=e.status_code)
 
 
 meta = MetaData(

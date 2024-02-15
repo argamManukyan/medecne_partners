@@ -1,9 +1,12 @@
+from functools import wraps
+from fastapi import status
 from sqlalchemy import inspect
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.relationships import RelationshipProperty
-from typing import Callable, TypeVar
-from functools import wraps
+from sqlalchemy import Column
+from typing import Callable, TypeVar, Awaitable, Any
 
+from src.exceptions import GenericException
 
 Model = TypeVar("Model")
 
@@ -13,6 +16,11 @@ def _get_related_columns(table: Model) -> list[RelationshipProperty]:
 
     inspection = inspect(table)
     return list(inspection.relationships)
+
+
+def _get_local_columns(table: Model) -> list[Column]:
+    inspection = inspect(table)
+    return list(inspection.columns)
 
 
 def join_with(join_models: list[Model], main_model: Model):
@@ -31,7 +39,7 @@ def join_with(join_models: list[Model], main_model: Model):
             )
 
             options_list = (
-                []
+                list()
             )  # Grouping all kind of selections such as selectinload or joinedload
 
             for rel_column in filtered_relation_columns:
@@ -41,6 +49,38 @@ def join_with(join_models: list[Model], main_model: Model):
                     )
 
             return await func(options_l=options_list, *args, **kwargs)
+
+        return wrapper
+
+    return inner
+
+
+def validate_unique_args(
+    model: Model, filter_func: Callable[[Any, Any], Awaitable[Any]]
+):
+    def inner(func: Callable):
+
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+
+            unique_columns = [i.name for i in _get_local_columns(model) if i.unique]
+            session = kwargs.get("session")
+            data = kwargs.get("data")
+
+            for col in unique_columns:
+                filter_d = {col: getattr(data, col)}
+
+                res = await filter_func(session, **filter_d)  # check existing
+
+                if res:
+                    message = f"The {model.__tablename__.title()} with given {col} already exists."
+
+                    raise GenericException(
+                        detail=message,
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+            return await func(*args, **kwargs)
 
         return wrapper
 
